@@ -1,0 +1,8 @@
+# CODEOWNERS — see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# Order matters: later patterns override earlier ones.
+
+# Default owners for everything
+*       @AlexisCorreaCano
+
+# Workflows and CI require an extra review
+/.github/      @AlexisCorreaCano

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# pre-push hook: full test suite before pushing.
+# Bypass with: git push --no-verify
+
+set -euo pipefail
+
+if [ -t 1 ]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  NC='\033[0m'
+else
+  RED='' GREEN='' YELLOW='' NC=''
+fi
+
+log()  { printf "%b\n" "$*"; }
+ok()   { log "${GREEN}✓${NC} $*"; }
+fail() { log "${RED}✗${NC} $*"; exit 1; }
+
+test -f pubspec.yaml || fail "Not in a Flutter project root (no pubspec.yaml)."
+
+log "→ Resolving dependencies..."
+flutter pub get >/dev/null 2>&1 || fail "flutter pub get failed."
+
+log "→ Running flutter analyze..."
+flutter analyze --fatal-infos --fatal-warnings >/dev/null 2>&1 || fail "flutter analyze reported issues."
+
+log "→ Running flutter test..."
+flutter test >/dev/null 2>&1 || fail "flutter test failed."
+
+ok "Pre-push checks passed. Pushing."

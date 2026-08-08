@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Pre-commit hook: format check, static analysis, and secret scan on staged content.
+# Bypass with: git commit --no-verify
+
+set -euo pipefail
+
+if [ -t 1 ]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  NC='\033[0m'
+else
+  RED='' GREEN='' YELLOW='' NC=''
+fi
+
+log()  { printf "%b\n" "$*"; }
+ok()   { log "${GREEN}✓${NC} $*"; }
+warn() { log "${YELLOW}!${NC} $*"; }
+fail() { log "${RED}✗${NC} $*"; exit 1; }
+
+require_tool() {
+  command -v "$1" >/dev/null 2>&1 || fail "Missing required tool: $1"
+}
+
+require_tool dart
+require_tool flutter
+
+# 1. Collect staged Dart files (added/copied/modified/renamed).
+STAGED_DART=$(git diff --cached --name-only --diff-filter=ACMR -- '*.dart' || true)
+
+if [ -n "${STAGED_DART}" ]; then
+  log "→ Checking dart format on staged files..."
+  if echo "${STAGED_DART}" | xargs dart format --output=none --set-exit-if-changed >/dev/null 2>&1; then
+    ok "dart format: clean"
+  else
+    fail "dart format: unformatted files. Run 'dart format <files>' and re-stage."
+  fi
+
+  log "→ Running dart analyze..."
+  if dart analyze --fatal-infos --fatal-warnings >/dev/null 2>&1; then
+    ok "dart analyze: no issues"
+  else
+    dart analyze --fatal-infos --fatal-warnings 2>&1 | tail -n 50 || true
+    fail "dart analyze: fix the issues above or use '// ignore:' with justification."
+  fi
+else
+  ok "No Dart files staged, skipping Dart-specific checks."
+fi
+
+# 2. Secret scan with gitleaks.
+if command -v gitleaks >/dev/null 2>&1; then
+  log "→ Running gitleaks (protect)..."
+  if gitleaks protect --staged --redact --no-banner --config .gitleaks.toml >/dev/null 2>&1; then
+    ok "gitleaks: no secrets detected"
+  else
+    fail "gitleaks: secrets found in staged content. Remove them. Use .gitleaks.toml to allow false positives."
+  fi
+else
+  warn "gitleaks not installed — secret scan skipped. Install with: brew install gitleaks"
+fi
+
+# 3. Verify the repo still ignores critical sensitive paths.
+log "→ Checking .gitignore integrity..."
+SENSITIVE=(
+  ".env"
+  "android/app/google-services.json"
+  "ios/Runner/GoogleService-Info.plist"
+  "android/key.properties"
+)
+MISSING=()
+for path in "${SENSITIVE[@]}"; do
+  if ! git check-ignore "${path}" >/dev/null 2>&1; then
+    MISSING+=("${path}")
+  fi
+done
+if [ ${#MISSING[@]} -eq 0 ]; then
+  ok ".gitignore: sensitive paths are ignored"
+else
+  warn ".gitignore does not ignore: ${MISSING[*]}"
+fi
+
+ok "Pre-commit checks passed."

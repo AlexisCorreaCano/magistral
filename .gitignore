@@ -26,12 +26,17 @@ migrate_working_dir/
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
+**/ios/Flutter/flutter_export_environment.sh
 .dart_tool/
 .flutter-plugins-dependencies
+.flutter-plugins
+.packages
 .pub-cache/
 .pub/
 /build/
 /coverage/
+lcov.info
+*.lcov
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +48,52 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android signing (NEVER commit keys)
+*.jks
+*.keystore
+key.properties
+/android/app/upload-keystore.jks
+/android/key.properties
+
+# iOS signing and build artifacts (NEVER commit keys)
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/xcuserdata/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+
+# Secrets and environment files (NEVER commit real values)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+*-credentials.json
+firebase-adminsdk-*.json
+
+# Firebase platform configs (NEVER commit)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Fastlane
+/fastlane/report.xml
+/fastlane/Preview.html
+/fastlane/screenshots/
+/fastlane/test_output/
+/fastlane/.git*
+
+# FVM (Flutter Version Manager)
+.fvm/
+
+# Engram local config (per-machine)
+.engram/

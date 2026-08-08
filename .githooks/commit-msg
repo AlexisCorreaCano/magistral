@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# commit-msg hook: enforce Conventional Commits format.
+# Allowed types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert.
+# Bypass with: git commit --no-verify
+
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+SUBJECT=$(head -1 "${COMMIT_MSG_FILE}")
+
+# Allow merge commits, fixup, and squash messages to pass through.
+if echo "${SUBJECT}" | grep -qE '^(Merge |Revert "|fixup! |squash! )'; then
+  exit 0
+fi
+
+CONVENTIONAL_REGEX='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([a-z0-9._-]+\))?!?: [a-z0-9].{2,}$'
+
+if ! echo "${SUBJECT}" | grep -qE "${CONVENTIONAL_REGEX}"; then
+  cat >&2 <<EOF
+ERROR: Commit message does not follow Conventional Commits.
+
+Format:  <type>(<scope>): <subject>
+Example: feat(login): add OAuth2 Google sign-in
+
+Allowed types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
+Subject must start with a lowercase letter and be at least 3 characters.
+
+Got: "${SUBJECT}"
+EOF
+  exit 1
+fi

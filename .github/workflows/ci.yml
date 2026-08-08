@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.9"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Static analysis
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Generate coverage summary
+        if: always()
+        run: |
+          if command -v lcov >/dev/null 2>&1; then
+            lcov --summary coverage/lcov.info | tee coverage-summary.txt
+          else
+            echo "lcov not installed; skipping summary"
+          fi
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/lcov.info
+            coverage-summary.txt
