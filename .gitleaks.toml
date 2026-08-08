@@ -4,28 +4,24 @@ title = "magistral secret scanning"
 [extend]
 useDefault = true
 
-# Allowlist for paths that legitimately reference fake keys, examples, or docs.
+# Allowlist for paths and values that legitimately reference fake keys, examples, or docs.
 [[allowlists]]
-description = "Test fixtures, examples, and documentation"
-target_rules = [
-  "generic-api-key",
-  "gitlab-pat",
-  "github-pat",
-  "aws-access-token",
-  "stripe-access-token",
-  "slack-bot-token",
-  "private-key",
-]
+description = "Test fixtures, examples, and documentation may reference placeholder keys"
 paths = [
   '''(^|/)test/.*''',
   '''(^|/)integration_test/.*''',
   '''(^|/)example/.*''',
   '''(^|/)docs/.*''',
-  '''(^|/)README\.md$''',
   '''(?i).*\.(md|markdown)$''',
+  '''README\.md$''',
+  '''CHANGELOG\.md$''',
+  '''SECURITY\.md$''',
+  '''CONTRIBUTING\.md$''',
+  '''CODEOWNERS$''',
+  '''LICENSE$''',
 ]
-
-  # Obvious placeholder values that should never trigger.
-  [[allowlists.regexes]]
-  description = "Allow obviously-fake placeholder values"
-  regex = '''(?i)(example|placeholder|dummy|fake|test|sample|your[-_]?(token|key|secret|password|app[-_]?id))'''
+regexes = [
+  '''(?i)(example|placeholder|dummy|fake|test|sample|your[-_]?(token|key|secret|password|app[-_]?id))[-_]?(token|key|secret|password)?''',
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
+]
